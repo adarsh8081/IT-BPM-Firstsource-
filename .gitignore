@@ -255,3 +255,12 @@ worker.log
 *.pem
 *.key
 *.crt
+
+# Mono-repo specific
+frontend/.next/
+frontend/out/
+frontend/build/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage

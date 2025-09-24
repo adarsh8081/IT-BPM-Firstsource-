@@ -4,6 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
+    container_name: provider-validation-postgres
     environment:
       POSTGRES_DB: provider_validation
       POSTGRES_USER: postgres
@@ -12,16 +13,18 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - provider-network
 
   # Redis Cache
   redis:
     image: redis:7-alpine
+    container_name: provider-validation-redis
     ports:
       - "6379:6379"
     volumes:
@@ -31,12 +34,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - provider-network
 
-  # Backend API
+  # Backend API (Development)
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
+    container_name: provider-validation-backend
     ports:
       - "8000:8000"
     environment:
@@ -44,50 +50,67 @@ services:
       REDIS_URL: redis://redis:6379/0
       DEBUG: "true"
       ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app/backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - provider-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Frontend Application
+  # Frontend Application (Development)
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: provider-validation-frontend
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      NODE_ENV: development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - provider-network
+    command: npm run dev
 
-  # Validation Worker
+  # Validation Worker (Development)
   worker:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    command: python -m backend.workers.validation_worker
+    container_name: provider-validation-worker
     environment:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/provider_validation
       REDIS_URL: redis://redis:6379/0
       DEBUG: "true"
       ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,9 +118,16 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    volumes:
-      - ./backend:/app/backend
+    networks:
+      - provider-network
+    command: python -m workers.validation_worker
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+
+networks:
+  provider-network:
+    driver: bridge

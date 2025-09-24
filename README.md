@@ -1,248 +1,296 @@
 # Provider Data Validation & Directory Management System
-## Healthcare Payer Operations Platform
+## Mono-repo Structure
 
 [![CI/CD Pipeline](https://github.com/adarsh8081/IT-BPM-Firstsource-/actions/workflows/ci.yml/badge.svg)](https://github.com/adarsh8081/IT-BPM-Firstsource-/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 App Purpose
+This is a mono-repo containing a full-stack healthcare provider data validation and directory management system.
 
-The Provider Data Validation & Directory Management System is a comprehensive healthcare platform designed to streamline and automate provider data validation processes for healthcare payers. The system validates provider information against multiple authoritative sources, ensuring data accuracy, compliance, and operational efficiency.
-
-**Core Mission**: Eliminate manual provider data validation processes while ensuring 99%+ accuracy and compliance with healthcare regulations.
-
-## 👥 Target Users
-
-### Primary Users: Healthcare Payers & Operations Teams
-- **Healthcare Payers**: Insurance companies, Medicare/Medicaid administrators
-- **Provider Network Managers**: Teams responsible for provider onboarding and maintenance
-- **Compliance Officers**: Ensuring regulatory compliance and audit readiness
-- **Operations Teams**: Back-office teams managing provider data and workflows
-
-### Use Cases
-- Provider credentialing and re-credentialing
-- Network adequacy monitoring
-- Provider directory maintenance
-- Compliance reporting and auditing
-
-## 🚀 MVP Features
-
-### Core Validation Features
-- ✅ **NPI Registry Validation**: Real-time verification against CMS NPI Registry
-- ✅ **Address Validation**: Google Places API integration for address verification
-- ✅ **License Validation**: State medical board verification
-- ✅ **Bulk Processing**: Process 200+ provider profiles in under 30 minutes
-- ✅ **Automated Workflows**: Background job processing with retry mechanisms
-
-### Provider Management
-- ✅ **CRUD Operations**: Create, read, update, delete provider profiles
-- ✅ **Advanced Search**: Multi-criteria filtering and search capabilities
-- ✅ **Bulk Import/Export**: CSV import/export functionality
-- ✅ **Document Management**: PDF document storage and retrieval
-
-### Dashboard & Analytics
-- ✅ **Real-time Monitoring**: Live validation queue and status tracking
-- ✅ **Performance Metrics**: Processing times, success rates, error tracking
-- ✅ **Compliance Reporting**: Audit trails and regulatory reporting
-
-## 📊 Key Performance Indicators (KPIs)
-
-### Accuracy & Quality Metrics
-- **Validation Accuracy**: >95% (Target: >80% ✅)
-- **Data Completeness**: >98% for critical fields
-- **False Positive Rate**: <2%
-
-### Performance Metrics
-- **Processing Speed**: 200 profiles in <30 minutes ✅
-- **API Response Time**: <200ms average
-- **System Uptime**: 99.9%
-- **Concurrent Users**: 500+ supported
-
-## 🏗️ High-Level Architecture
+## 📁 Repository Structure
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend API   │    │   Job Workers   │
-│   (Next.js)     │◄──►│   (FastAPI)     │◄──►│   (RQ Workers)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-                       ┌─────────────────┐    ┌─────────────────┐
-                       │   PostgreSQL    │    │      Redis      │
-                       │   Database      │    │   Job Queue     │
-                       └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │  External APIs  │
-                       │  - NPI Registry │
-                       │  - Google Maps  │
-                       │  - State Boards │
-                       └─────────────────┘
+provider-validation-monorepo/
+├── frontend/                 # Next.js + TypeScript + Tailwind CSS
+│   ├── app/                 # Next.js App Router
+│   ├── components/          # React components
+│   ├── lib/                 # Utilities and helpers
+│   ├── hooks/               # Custom React hooks
+│   ├── types/               # TypeScript type definitions
+│   ├── utils/               # Utility functions
+│   ├── package.json         # Frontend dependencies
+│   ├── Dockerfile           # Frontend container
+│   └── README.md            # Frontend documentation
+├── backend/                 # FastAPI + Python
+│   ├── main.py              # FastAPI application entry point
+│   ├── models.py            # SQLAlchemy models
+│   ├── schemas.py           # Pydantic schemas
+│   ├── routers/             # API route handlers
+│   ├── services/            # Business logic
+│   ├── connectors/          # External API connectors
+│   ├── workers/             # Background job workers
+│   ├── middleware/          # Custom middleware
+│   ├── scripts/             # Utility scripts
+│   ├── alembic/             # Database migrations
+│   ├── pyproject.toml       # Python dependencies
+│   ├── Dockerfile           # Backend container
+│   └── README.md            # Backend documentation
+├── tests/                   # Integration tests
+├── docker-compose.dev.yml   # Development environment
+├── package.json             # Mono-repo scripts
+└── README.md                # This file
 ```
-
-## 📋 Data Model Summary
-
-### Core Entities
-
-#### Provider Entity
-- **id**: UUID (Primary Key)
-- **npi**: VARCHAR(10) (Unique, Indexed)
-- **first_name, last_name**: Provider names
-- **specialty**: Medical specialty
-- **organization**: Healthcare organization
-- **address**: Complete address information
-- **license_number, license_state**: Medical license details
-- **status**: ENUM(pending, valid, invalid, warning)
-- **validation_score**: FLOAT
-- **timestamps**: created_at, updated_at
-
-#### Validation Job Entity
-- **id**: UUID (Primary Key)
-- **provider_id**: UUID (Foreign Key)
-- **priority**: ENUM(low, medium, high)
-- **status**: ENUM(pending, running, completed, failed)
-- **validation_flags**: validate_npi, validate_address, validate_license
-- **progress**: INTEGER
-- **timestamps**: started_at, completed_at
-
-#### Validation Result Entity
-- **id**: UUID (Primary Key)
-- **provider_id, job_id**: UUID (Foreign Keys)
-- **validation_results**: npi_valid, address_valid, license_valid
-- **details**: JSON fields for detailed results
-- **overall_score**: FLOAT
-- **errors, warnings**: JSON arrays
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+, Python 3.11+, Docker & Docker Compose
+- Node.js 18+
+- Python 3.11+
+- Docker & Docker Compose
 
-### Option 1: Docker Compose (Recommended)
+### Development Setup
 
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/adarsh8081/IT-BPM-Firstsource-.git
+   cd IT-BPM-Firstsource-
+   ```
+
+2. **Start all services with Docker Compose**
+   ```bash
+   npm run dev
+   # or
+   docker-compose -f docker-compose.dev.yml up --build
+   ```
+
+3. **Access the applications**
+   - **Frontend**: http://localhost:3000
+   - **Backend API**: http://localhost:8000
+   - **API Documentation**: http://localhost:8000/docs
+   - **Database**: localhost:5432
+   - **Redis**: localhost:6379
+
+4. **Run database migrations**
+   ```bash
+   npm run migrate
+   ```
+
+5. **Generate demo data**
+   ```bash
+   npm run demo-data
+   ```
+
+### Individual Service Development
+
+#### Frontend Development
 ```bash
-# 1. Clone and setup
-git clone https://github.com/adarsh8081/IT-BPM-Firstsource-.git
-cd IT-BPM-Firstsource-
+# Install dependencies
+cd frontend && npm install
 
-# 2. Configure environment
-cp env.example .env
-# Edit .env with your API keys
+# Start development server
+npm run frontend:dev
 
-# 3. Start services
-docker-compose up -d
+# Run tests
+npm run frontend:test
 
-# 4. Run migrations and demo data
-docker-compose exec backend alembic upgrade head
-docker-compose exec backend python -m backend.scripts.generate_demo_data
-
-# 5. Access application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000/docs
+# Build for production
+npm run frontend:build
 ```
 
-### Environment Configuration
+#### Backend Development
+```bash
+# Install dependencies
+cd backend && pip install -e .
 
+# Start development server
+npm run backend:dev
+
+# Run tests
+npm run backend:test
+
+# Run linting
+npm run backend:lint
+```
+
+## 🛠️ Available Scripts
+
+### Mono-repo Scripts
+- `npm run dev` - Start all services in development mode
+- `npm run dev:build` - Build and start all services
+- `npm run dev:down` - Stop all services
+- `npm run dev:logs` - View logs from all services
+- `npm run test` - Run tests for both frontend and backend
+- `npm run lint` - Run linting for both frontend and backend
+- `npm run clean` - Clean up Docker containers and volumes
+- `npm run setup` - Install dependencies for all services
+- `npm run migrate` - Run database migrations
+- `npm run demo-data` - Generate demo data
+
+### Frontend Scripts
+- `npm run frontend:dev` - Start Next.js development server
+- `npm run frontend:build` - Build Next.js application
+- `npm run frontend:test` - Run frontend tests
+
+### Backend Scripts
+- `npm run backend:dev` - Start FastAPI development server
+- `npm run backend:test` - Run backend tests
+- `npm run backend:lint` - Run Python linting
+
+## 🏗️ Architecture
+
+### Frontend (`/frontend`)
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Headless UI, Heroicons
+- **Testing**: Jest, React Testing Library
+
+### Backend (`/backend`)
+- **Framework**: FastAPI
+- **Language**: Python 3.11
+- **Database**: PostgreSQL with SQLAlchemy
+- **Job Queue**: Redis with RQ
+- **Testing**: pytest
+- **Documentation**: Auto-generated with FastAPI
+
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Development**: Hot reload for both frontend and backend
+- **Database**: PostgreSQL with health checks
+- **Cache**: Redis for job queue and caching
+
+## 📊 Services
+
+### Core Services
+- **Frontend**: Next.js application on port 3000
+- **Backend**: FastAPI application on port 8000
+- **PostgreSQL**: Database on port 5432
+- **Redis**: Cache and job queue on port 6379
+- **Worker**: Background job processor
+
+### External Integrations
+- **NPI Registry API**: Provider validation
+- **Google Places API**: Address validation
+- **State Medical Board APIs**: License validation
+
+## 🔧 Development Workflow
+
+1. **Start Development Environment**
+   ```bash
+   npm run dev
+   ```
+
+2. **Make Changes**
+   - Frontend changes auto-reload on port 3000
+   - Backend changes auto-reload on port 8000
+
+3. **Run Tests**
+   ```bash
+   npm run test
+   ```
+
+4. **Check Code Quality**
+   ```bash
+   npm run lint
+   ```
+
+5. **View Logs**
+   ```bash
+   npm run dev:logs
+   ```
+
+## 📝 Environment Variables
+
+### Frontend (.env.local)
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/provider_validation
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### Backend (.env)
+```env
+DATABASE_URL=postgresql://postgres:password@localhost:5432/provider_validation
 REDIS_URL=redis://localhost:6379/0
 NPI_API_KEY=your-npi-api-key
 GOOGLE_PLACES_API_KEY=your-google-places-api-key
 SECRET_KEY=your-secret-key
 DEBUG=true
+ENVIRONMENT=development
 ```
 
-## 📦 List of Deliverables
+## 🧪 Testing
 
-### 1. **Complete Application** ✅
-- Frontend: Next.js 14 + TypeScript + Tailwind CSS
-- Backend: FastAPI + Python 3.11 + PostgreSQL
-- Job Queue: Redis + RQ workers
-- Containerization: Docker + Docker Compose
-- **62 source files** with production-ready code
+### Frontend Tests
+```bash
+cd frontend
+npm test
+npm run test:coverage
+```
 
-### 2. **API Documentation** ✅
-- Interactive API Docs: Auto-generated with FastAPI (Swagger UI)
-- Complete REST API reference with endpoints
-- Schema documentation and validation rules
-- Authentication and security guides
+### Backend Tests
+```bash
+cd backend
+pytest
+pytest --cov=backend --cov-report=html
+```
 
-### 3. **Comprehensive Testing** ✅
-- Unit tests: Provider API, Validation API, Connectors
-- Integration tests: End-to-end workflow testing
-- Frontend tests: React components with Jest
-- Backend tests: FastAPI endpoints with pytest
-- **70%+ code coverage** requirement met
+### Integration Tests
+```bash
+# Start test environment
+docker-compose -f docker-compose.dev.yml up -d
 
-### 4. **Demo Dataset** ✅
-- **200 synthetic provider profiles** with realistic healthcare data
-- **20 PDF documents**: Medical licenses, DEA registrations, hospital privileges
-- Mixed validation scenarios: Valid, invalid, expired, and pending statuses
-- Diverse data: Multiple specialties, locations, and organizations
+# Run integration tests
+pytest tests/
+```
 
-### 5. **5-Slide PPT Demo** ✅
-- **Slide 1**: Executive Summary & Problem Statement
-- **Slide 2**: System Architecture & Technology Stack
-- **Slide 3**: Core Features & Capabilities
-- **Slide 4**: Demo Data & Validation Results
-- **Slide 5**: Business Impact & Next Steps
+## 🚀 Deployment
 
-### 6. **Additional Deliverables** ✅
-- CI/CD Pipeline: GitHub Actions with automated testing
-- Security Scanning: Bandit, Safety, vulnerability checks
-- Docker Images: Production-ready containers
-- Health Monitoring: System status and performance metrics
-- Troubleshooting Guide: Common issues and solutions
+### Production Build
+```bash
+# Build frontend
+cd frontend && npm run build
 
-## 🔧 Technology Stack
+# Build backend
+cd backend && pip install -e .
 
-### Frontend
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Testing**: Jest, React Testing Library
+# Build Docker images
+docker-compose -f docker-compose.prod.yml build
+```
 
-### Backend
-- **Framework**: FastAPI
-- **Language**: Python 3.11
-- **Database**: PostgreSQL with SQLAlchemy
-- **Job Queue**: Redis with RQ
-- **Testing**: pytest, httpx
+### Docker Production
+```bash
+# Start production environment
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-### Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **CI/CD**: GitHub Actions
-- **Security**: PII redaction, rate limiting, input validation
+## 📚 Documentation
 
-## 📊 Performance Benchmarks
+- **Frontend Documentation**: [frontend/README.md](frontend/README.md)
+- **Backend Documentation**: [backend/README.md](backend/README.md)
+- **API Documentation**: http://localhost:8000/docs (when running)
+- **Architecture Overview**: [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)
+- **Presentation**: [PRESENTATION.md](PRESENTATION.md)
 
-| Metric | Target | Achieved | Status |
-|--------|--------|----------|--------|
-| Validation Accuracy | >80% | >95% | ✅ |
-| Processing Speed | 200 profiles <30min | <15min | ✅ |
-| API Response Time | <500ms | <200ms | ✅ |
-| System Uptime | >99% | 99.9% | ✅ |
-| Test Coverage | >60% | >70% | ✅ |
+## 🤝 Contributing
 
-## 🔒 Security & Compliance
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`npm run test`)
+5. Run linting (`npm run lint`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
-- **PII Protection**: Automatic redaction in logs and monitoring
-- **Rate Limiting**: Configurable limits for external API calls
-- **Input Validation**: Comprehensive data validation and sanitization
-- **Audit Trails**: Complete logging of all system operations
-- **HIPAA Considerations**: Healthcare data handling best practices
-
-## 📞 Support & Contact
+## 📞 Support
 
 - **Repository**: [https://github.com/adarsh8081/IT-BPM-Firstsource-](https://github.com/adarsh8081/IT-BPM-Firstsource-.git)
 - **Issues**: GitHub Issues for bug reports and feature requests
 - **Documentation**: Comprehensive setup and API documentation
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
 
 **Built with ❤️ for Healthcare Payers**  
 *Delivering accurate, compliant, and efficient provider data management*
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
