@@ -1,0 +1,207 @@
+{
+  "total_images": 20,
+  "generation_date": "2024-01-15",
+  "description": "Synthetic scanned PDF images representing provider application forms",
+  "images": [
+    {
+      "filename": "pdf_images\\provider_form_001.png",
+      "form_number": 1,
+      "form_template": "physician_registration_form_v5",
+      "description": "Provider application form #001",
+      "expected_fields": 9,
+      "data_quality": "fair",
+      "scan_quality": "low",
+      "handwriting_style": "times"
+    },
+    {
+      "filename": "pdf_images\\provider_form_002.png",
+      "form_number": 2,
+      "form_template": "credentialing_application_v3",
+      "description": "Provider application form #002",
+      "expected_fields": 8,
+      "data_quality": "good",
+      "scan_quality": "high",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_003.png",
+      "form_number": 3,
+      "form_template": "physician_registration_form_v5",
+      "description": "Provider application form #003",
+      "expected_fields": 8,
+      "data_quality": "good",
+      "scan_quality": "high",
+      "handwriting_style": "arial"
+    },
+    {
+      "filename": "pdf_images\\provider_form_004.png",
+      "form_number": 4,
+      "form_template": "provider_enrollment_form_v4",
+      "description": "Provider application form #004",
+      "expected_fields": 15,
+      "data_quality": "good",
+      "scan_quality": "medium",
+      "handwriting_style": "times"
+    },
+    {
+      "filename": "pdf_images\\provider_form_005.png",
+      "form_number": 5,
+      "form_template": "provider_enrollment_form_v4",
+      "description": "Provider application form #005",
+      "expected_fields": 10,
+      "data_quality": "poor",
+      "scan_quality": "medium",
+      "handwriting_style": "courier"
+    },
+    {
+      "filename": "pdf_images\\provider_form_006.png",
+      "form_number": 6,
+      "form_template": "provider_application_form_v1",
+      "description": "Provider application form #006",
+      "expected_fields": 13,
+      "data_quality": "good",
+      "scan_quality": "medium",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_007.png",
+      "form_number": 7,
+      "form_template": "provider_application_form_v1",
+      "description": "Provider application form #007",
+      "expected_fields": 12,
+      "data_quality": "fair",
+      "scan_quality": "medium",
+      "handwriting_style": "times"
+    },
+    {
+      "filename": "pdf_images\\provider_form_008.png",
+      "form_number": 8,
+      "form_template": "medical_license_application_v2",
+      "description": "Provider application form #008",
+      "expected_fields": 8,
+      "data_quality": "fair",
+      "scan_quality": "low",
+      "handwriting_style": "arial"
+    },
+    {
+      "filename": "pdf_images\\provider_form_009.png",
+      "form_number": 9,
+      "form_template": "credentialing_application_v3",
+      "description": "Provider application form #009",
+      "expected_fields": 11,
+      "data_quality": "poor",
+      "scan_quality": "high",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_010.png",
+      "form_number": 10,
+      "form_template": "medical_license_application_v2",
+      "description": "Provider application form #010",
+      "expected_fields": 12,
+      "data_quality": "good",
+      "scan_quality": "medium",
+      "handwriting_style": "arial"
+    },
+    {
+      "filename": "pdf_images\\provider_form_011.png",
+      "form_number": 11,
+      "form_template": "provider_enrollment_form_v4",
+      "description": "Provider application form #011",
+      "expected_fields": 11,
+      "data_quality": "poor",
+      "scan_quality": "high",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_012.png",
+      "form_number": 12,
+      "form_template": "provider_enrollment_form_v4",
+      "description": "Provider application form #012",
+      "expected_fields": 15,
+      "data_quality": "good",
+      "scan_quality": "low",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_013.png",
+      "form_number": 13,
+      "form_template": "provider_enrollment_form_v4",
+      "description": "Provider application form #013",
+      "expected_fields": 13,
+      "data_quality": "fair",
+      "scan_quality": "low",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_014.png",
+      "form_number": 14,
+      "form_template": "credentialing_application_v3",
+      "description": "Provider application form #014",
+      "expected_fields": 15,
+      "data_quality": "good",
+      "scan_quality": "medium",
+      "handwriting_style": "arial"
+    },
+    {
+      "filename": "pdf_images\\provider_form_015.png",
+      "form_number": 15,
+      "form_template": "physician_registration_form_v5",
+      "description": "Provider application form #015",
+      "expected_fields": 9,
+      "data_quality": "good",
+      "scan_quality": "high",
+      "handwriting_style": "times"
+    },
+    {
+      "filename": "pdf_images\\provider_form_016.png",
+      "form_number": 16,
+      "form_template": "medical_license_application_v2",
+      "description": "Provider application form #016",
+      "expected_fields": 14,
+      "data_quality": "poor",
+      "scan_quality": "high",
+      "handwriting_style": "times"
+    },
+    {
+      "filename": "pdf_images\\provider_form_017.png",
+      "form_number": 17,
+      "form_template": "credentialing_application_v3",
+      "description": "Provider application form #017",
+      "expected_fields": 11,
+      "data_quality": "good",
+      "scan_quality": "low",
+      "handwriting_style": "courier"
+    },
+    {
+      "filename": "pdf_images\\provider_form_018.png",
+      "form_number": 18,
+      "form_template": "provider_application_form_v1",
+      "description": "Provider application form #018",
+      "expected_fields": 15,
+      "data_quality": "poor",
+      "scan_quality": "high",
+      "handwriting_style": "times"
+    },
+    {
+      "filename": "pdf_images\\provider_form_019.png",
+      "form_number": 19,
+      "form_template": "medical_license_application_v2",
+      "description": "Provider application form #019",
+      "expected_fields": 14,
+      "data_quality": "fair",
+      "scan_quality": "low",
+      "handwriting_style": "helvetica"
+    },
+    {
+      "filename": "pdf_images\\provider_form_020.png",
+      "form_number": 20,
+      "form_template": "provider_application_form_v1",
+      "description": "Provider application form #020",
+      "expected_fields": 12,
+      "data_quality": "good",
+      "scan_quality": "medium",
+      "handwriting_style": "courier"
+    }
+  ]
+}
