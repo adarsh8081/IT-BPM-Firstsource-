@@ -1,246 +1,455 @@
 """
-Queue manager for handling validation job queues
+Job Queue Manager
+
+This module manages Redis Queue (RQ) workers and job processing for the validation system.
 """
 
 import asyncio
 import logging
+import os
+import signal
+import sys
+from typing import Dict, List, Optional, Any
+from datetime import datetime, timedelta
 import redis
 from rq import Queue, Worker, Connection
 from rq.job import Job
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-
-from ..config import settings
+from rq.exceptions import NoSuchJobError
+import multiprocessing
 
 logger = logging.getLogger(__name__)
 
+
 class QueueManager:
-    """Manager for validation job queues"""
+    """
+    Queue Manager for Redis Queue (RQ)
     
-    def __init__(self):
-        self.redis_conn = redis.from_url(settings.REDIS_URL)
-        self.queue = Queue('validation', connection=self.redis_conn)
+    Manages job queues, workers, and job processing for the validation system.
+    """
     
-    def enqueue_job(self, job_id: str, priority: str = 'normal') -> Dict[str, Any]:
-        """Enqueue a validation job"""
+    def __init__(self, redis_url: str = "redis://localhost:6379/0"):
+        """
+        Initialize Queue Manager
+        
+        Args:
+            redis_url: Redis connection URL
+        """
+        self.redis_url = redis_url
+        self.redis_conn = redis.from_url(redis_url)
+        
+        # Initialize job queues
+        self.queues = {
+            'npi_validation': Queue('npi_validation', connection=self.redis_conn),
+            'google_places_validation': Queue('google_places_validation', connection=self.redis_conn),
+            'ocr_processing': Queue('ocr_processing', connection=self.redis_conn),
+            'state_board_validation': Queue('state_board_validation', connection=self.redis_conn),
+            'enrichment_lookup': Queue('enrichment_lookup', connection=self.redis_conn)
+        }
+        
+        # Worker processes
+        self.workers = {}
+        self.worker_processes = {}
+        
+        # Queue configuration
+        self.queue_config = {
+            'npi_validation': {
+                'worker_count': 2,
+                'timeout': 300,  # 5 minutes
+                'retry_count': 3
+            },
+            'google_places_validation': {
+                'worker_count': 2,
+                'timeout': 300,  # 5 minutes
+                'retry_count': 3
+            },
+            'ocr_processing': {
+                'worker_count': 1,  # OCR is CPU intensive
+                'timeout': 600,  # 10 minutes
+                'retry_count': 2
+            },
+            'state_board_validation': {
+                'worker_count': 1,  # Rate limited
+                'timeout': 300,  # 5 minutes
+                'retry_count': 3
+            },
+            'enrichment_lookup': {
+                'worker_count': 2,
+                'timeout': 300,  # 5 minutes
+                'retry_count': 3
+            }
+        }
+    
+    def start_workers(self):
+        """Start all worker processes"""
         try:
-            job = self.queue.enqueue(
-                'workers.validation_worker.process_validation_job',
-                job_id,
-                job_timeout='30m',
-                retry=True,
-                job_id=f"validation_{job_id}"
+            for queue_name, queue in self.queues.items():
+                config = self.queue_config[queue_name]
+                worker_count = config['worker_count']
+                
+                logger.info(f"Starting {worker_count} workers for {queue_name}")
+                
+                for i in range(worker_count):
+                    worker_name = f"{queue_name}_worker_{i}"
+                    worker = Worker([queue], connection=self.redis_conn, name=worker_name)
+                    
+                    # Start worker in separate process
+                    process = multiprocessing.Process(
+                        target=self._run_worker,
+                        args=(worker_name, queue_name, config),
+                        daemon=True
+                    )
+                    
+                    process.start()
+                    self.worker_processes[worker_name] = process
+                    
+                    logger.info(f"Started worker {worker_name} (PID: {process.pid})")
+            
+            logger.info("All workers started successfully")
+        
+        except Exception as e:
+            logger.error(f"Failed to start workers: {str(e)}")
+            raise
+    
+    def stop_workers(self):
+        """Stop all worker processes"""
+        try:
+            for worker_name, process in self.worker_processes.items():
+                if process.is_alive():
+                    logger.info(f"Stopping worker {worker_name} (PID: {process.pid})")
+                    process.terminate()
+                    process.join(timeout=10)
+                    
+                    if process.is_alive():
+                        logger.warning(f"Force killing worker {worker_name}")
+                        process.kill()
+                        process.join()
+            
+            self.worker_processes.clear()
+            logger.info("All workers stopped")
+        
+        except Exception as e:
+            logger.error(f"Failed to stop workers: {str(e)}")
+            raise
+    
+    def _run_worker(self, worker_name: str, queue_name: str, config: Dict[str, Any]):
+        """
+        Run worker process
+        
+        Args:
+            worker_name: Worker name
+            queue_name: Queue name
+            config: Worker configuration
+        """
+        try:
+            # Set up logging for worker process
+            logging.basicConfig(
+                level=logging.INFO,
+                format=f'%(asctime)s - {worker_name} - %(levelname)s - %(message)s'
             )
             
-            logger.info(f"Enqueued validation job {job_id} with RQ job {job.id}")
-            return {
-                "success": True,
-                "job_id": job_id,
-                "rq_job_id": job.id,
-                "status": "queued",
-                "created_at": job.created_at.isoformat()
-            }
+            # Create worker
+            queue = Queue(queue_name, connection=self.redis_conn)
+            worker = Worker([queue], connection=self.redis_conn, name=worker_name)
             
+            # Set up signal handlers
+            signal.signal(signal.SIGTERM, lambda sig, frame: worker.stop())
+            signal.signal(signal.SIGINT, lambda sig, frame: worker.stop())
+            
+            logger.info(f"Worker {worker_name} started")
+            
+            # Start working
+            worker.work(
+                with_scheduler=True,
+                logging_level='INFO'
+            )
+        
         except Exception as e:
-            logger.error(f"Failed to enqueue validation job {job_id}: {e}")
-            return {
-                "success": False,
-                "job_id": job_id,
-                "error": str(e)
-            }
-    
-    def get_job_status(self, rq_job_id: str) -> Dict[str, Any]:
-        """Get status of a queued job"""
-        try:
-            job = Job.fetch(rq_job_id, connection=self.redis_conn)
-            
-            return {
-                "success": True,
-                "rq_job_id": rq_job_id,
-                "status": job.get_status(),
-                "created_at": job.created_at.isoformat() if job.created_at else None,
-                "started_at": job.started_at.isoformat() if job.started_at else None,
-                "ended_at": job.ended_at.isoformat() if job.ended_at else None,
-                "result": job.result,
-                "exc_info": job.exc_info,
-                "progress": job.meta.get('progress', 0)
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to get job status for {rq_job_id}: {e}")
-            return {
-                "success": False,
-                "rq_job_id": rq_job_id,
-                "error": str(e)
-            }
-    
-    def cancel_job(self, rq_job_id: str) -> Dict[str, Any]:
-        """Cancel a queued job"""
-        try:
-            job = Job.fetch(rq_job_id, connection=self.redis_conn)
-            job.cancel()
-            
-            logger.info(f"Cancelled job {rq_job_id}")
-            return {
-                "success": True,
-                "rq_job_id": rq_job_id,
-                "status": "cancelled"
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to cancel job {rq_job_id}: {e}")
-            return {
-                "success": False,
-                "rq_job_id": rq_job_id,
-                "error": str(e)
-            }
+            logger.error(f"Worker {worker_name} failed: {str(e)}")
+            raise
     
     def get_queue_status(self) -> Dict[str, Any]:
-        """Get overall queue status"""
+        """
+        Get status of all queues
+        
+        Returns:
+            Queue status information
+        """
         try:
-            # Get queue statistics
-            queue_length = len(self.queue)
-            failed_jobs = self.queue.failed_job_registry.count
-            scheduled_jobs = self.queue.scheduled_job_registry.count
-            started_jobs = self.queue.started_job_registry.count
+            status = {}
             
-            # Get worker information
-            workers = Worker.all(connection=self.redis_conn)
-            worker_info = []
+            for queue_name, queue in self.queues.items():
+                status[queue_name] = {
+                    'length': len(queue),
+                    'failed_jobs': len(queue.failed_job_registry),
+                    'finished_jobs': len(queue.finished_job_registry),
+                    'started_jobs': len(queue.started_job_registry),
+                    'scheduled_jobs': len(queue.scheduled_job_registry)
+                }
             
-            for worker in workers:
-                worker_info.append({
-                    "name": worker.name,
-                    "state": worker.get_state(),
-                    "current_job": worker.get_current_job_id(),
-                    "last_heartbeat": worker.last_heartbeat.isoformat() if worker.last_heartbeat else None
-                })
-            
-            return {
-                "success": True,
-                "queue_name": self.queue.name,
-                "queue_length": queue_length,
-                "failed_jobs": failed_jobs,
-                "scheduled_jobs": scheduled_jobs,
-                "started_jobs": started_jobs,
-                "workers": worker_info,
-                "worker_count": len(workers)
-            }
-            
+            return status
+        
         except Exception as e:
-            logger.error(f"Failed to get queue status: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            logger.error(f"Failed to get queue status: {str(e)}")
+            return {}
     
-    def get_recent_jobs(self, limit: int = 10) -> Dict[str, Any]:
-        """Get recent jobs from the queue"""
+    def get_job_status(self, job_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get job status
+        
+        Args:
+            job_id: Job ID
+            
+        Returns:
+            Job status information
+        """
         try:
-            # Get recent jobs
-            recent_jobs = []
-            
-            # Get finished jobs
-            finished_jobs = self.queue.finished_job_registry.get_job_ids()
-            for job_id in finished_jobs[-limit:]:
-                try:
-                    job = Job.fetch(job_id, connection=self.redis_conn)
-                    recent_jobs.append({
-                        "rq_job_id": job.id,
-                        "status": job.get_status(),
-                        "created_at": job.created_at.isoformat() if job.created_at else None,
-                        "ended_at": job.ended_at.isoformat() if job.ended_at else None,
-                        "result": job.result
-                    })
-                except Exception:
-                    continue
-            
-            # Get failed jobs
-            failed_jobs = self.queue.failed_job_registry.get_job_ids()
-            for job_id in failed_jobs[-limit:]:
-                try:
-                    job = Job.fetch(job_id, connection=self.redis_conn)
-                    recent_jobs.append({
-                        "rq_job_id": job.id,
-                        "status": job.get_status(),
-                        "created_at": job.created_at.isoformat() if job.created_at else None,
-                        "ended_at": job.ended_at.isoformat() if job.ended_at else None,
-                        "exc_info": job.exc_info
-                    })
-                except Exception:
-                    continue
-            
-            # Sort by creation time
-            recent_jobs.sort(key=lambda x: x['created_at'] or '', reverse=True)
+            job = Job.fetch(job_id, connection=self.redis_conn)
             
             return {
-                "success": True,
-                "jobs": recent_jobs[:limit],
-                "count": len(recent_jobs[:limit])
+                'job_id': job.id,
+                'status': job.get_status(),
+                'created_at': job.created_at.isoformat() if job.created_at else None,
+                'started_at': job.started_at.isoformat() if job.started_at else None,
+                'ended_at': job.ended_at.isoformat() if job.ended_at else None,
+                'result': job.result,
+                'exc_info': job.exc_info,
+                'meta': job.meta,
+                'timeout': job.timeout,
+                'retry_count': job.retry_count
             }
-            
+        
+        except NoSuchJobError:
+            return None
         except Exception as e:
-            logger.error(f"Failed to get recent jobs: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "jobs": []
-            }
+            logger.error(f"Failed to get job status for {job_id}: {str(e)}")
+            return None
     
-    def retry_failed_jobs(self, job_ids: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Retry failed jobs"""
+    def cancel_job(self, job_id: str) -> bool:
+        """
+        Cancel a job
+        
+        Args:
+            job_id: Job ID
+            
+        Returns:
+            True if job was cancelled, False otherwise
+        """
         try:
+            job = Job.fetch(job_id, connection=self.redis_conn)
+            job.cancel()
+            
+            logger.info(f"Cancelled job {job_id}")
+            return True
+        
+        except NoSuchJobError:
+            logger.warning(f"Job {job_id} not found")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to cancel job {job_id}: {str(e)}")
+            return False
+    
+    def retry_failed_jobs(self, queue_name: str, limit: int = 10) -> int:
+        """
+        Retry failed jobs in a queue
+        
+        Args:
+            queue_name: Queue name
+            limit: Maximum number of jobs to retry
+            
+        Returns:
+            Number of jobs retried
+        """
+        try:
+            queue = self.queues[queue_name]
+            failed_jobs = queue.failed_job_registry.get_job_ids()
+            
             retried_count = 0
+            for job_id in failed_jobs[:limit]:
+                try:
+                    job = Job.fetch(job_id, connection=self.redis_conn)
+                    job.retry()
+                    retried_count += 1
+                    logger.info(f"Retried failed job {job_id}")
+                except Exception as e:
+                    logger.error(f"Failed to retry job {job_id}: {str(e)}")
             
-            if job_ids:
-                # Retry specific jobs
-                for job_id in job_ids:
-                    try:
-                        job = Job.fetch(job_id, connection=self.redis_conn)
-                        if job.get_status() == 'failed':
-                            job.retry()
-                            retried_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to retry job {job_id}: {e}")
-            else:
-                # Retry all failed jobs
-                failed_jobs = self.queue.failed_job_registry.get_job_ids()
-                for job_id in failed_jobs:
-                    try:
-                        job = Job.fetch(job_id, connection=self.redis_conn)
-                        job.retry()
-                        retried_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to retry job {job_id}: {e}")
-            
-            logger.info(f"Retried {retried_count} failed jobs")
-            return {
-                "success": True,
-                "retried_count": retried_count
-            }
-            
+            logger.info(f"Retried {retried_count} failed jobs in {queue_name}")
+            return retried_count
+        
         except Exception as e:
-            logger.error(f"Failed to retry failed jobs: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            logger.error(f"Failed to retry failed jobs in {queue_name}: {str(e)}")
+            return 0
     
-    def clear_failed_jobs(self) -> Dict[str, Any]:
-        """Clear all failed jobs from the registry"""
+    def cleanup_old_jobs(self, days: int = 7):
+        """
+        Clean up old finished jobs
+        
+        Args:
+            days: Number of days to keep jobs
+        """
         try:
-            failed_count = self.queue.failed_job_registry.count
-            self.queue.failed_job_registry.clear()
+            cutoff_date = datetime.now() - timedelta(days=days)
             
-            logger.info(f"Cleared {failed_count} failed jobs")
-            return {
-                "success": True,
-                "cleared_count": failed_count
-            }
-            
+            for queue_name, queue in self.queues.items():
+                # Clean up finished jobs
+                finished_jobs = queue.finished_job_registry.get_job_ids()
+                cleaned_count = 0
+                
+                for job_id in finished_jobs:
+                    try:
+                        job = Job.fetch(job_id, connection=self.redis_conn)
+                        if job.ended_at and job.ended_at < cutoff_date:
+                            job.delete()
+                            cleaned_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to clean up job {job_id}: {str(e)}")
+                
+                logger.info(f"Cleaned up {cleaned_count} old jobs from {queue_name}")
+        
         except Exception as e:
-            logger.error(f"Failed to clear failed jobs: {e}")
+            logger.error(f"Failed to cleanup old jobs: {str(e)}")
+    
+    def get_worker_status(self) -> Dict[str, Any]:
+        """
+        Get status of all workers
+        
+        Returns:
+            Worker status information
+        """
+        try:
+            status = {}
+            
+            for worker_name, process in self.worker_processes.items():
+                status[worker_name] = {
+                    'pid': process.pid,
+                    'alive': process.is_alive(),
+                    'exitcode': process.exitcode
+                }
+            
+            return status
+        
+        except Exception as e:
+            logger.error(f"Failed to get worker status: {str(e)}")
+            return {}
+    
+    def health_check(self) -> Dict[str, Any]:
+        """
+        Perform health check on queues and workers
+        
+        Returns:
+            Health check results
+        """
+        try:
+            # Check Redis connection
+            self.redis_conn.ping()
+            
+            # Check queue status
+            queue_status = self.get_queue_status()
+            
+            # Check worker status
+            worker_status = self.get_worker_status()
+            
+            # Determine overall health
+            healthy_workers = sum(1 for w in worker_status.values() if w['alive'])
+            total_workers = len(worker_status)
+            
+            overall_health = "healthy" if healthy_workers == total_workers else "degraded"
+            
             return {
-                "success": False,
-                "error": str(e)
+                'status': overall_health,
+                'redis_connection': 'healthy',
+                'queue_status': queue_status,
+                'worker_status': worker_status,
+                'healthy_workers': healthy_workers,
+                'total_workers': total_workers,
+                'timestamp': datetime.now().isoformat()
             }
+        
+        except Exception as e:
+            logger.error(f"Health check failed: {str(e)}")
+            return {
+                'status': 'unhealthy',
+                'error': str(e),
+                'timestamp': datetime.now().isoformat()
+            }
+
+
+# Global queue manager instance
+queue_manager = QueueManager()
+
+
+# Command line interface for managing workers
+
+def start_workers_command():
+    """Command to start workers"""
+    try:
+        logging.basicConfig(level=logging.INFO)
+        queue_manager.start_workers()
+        
+        # Keep running until interrupted
+        try:
+            while True:
+                import time
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down workers...")
+            queue_manager.stop_workers()
+    
+    except Exception as e:
+        logger.error(f"Failed to start workers: {str(e)}")
+        sys.exit(1)
+
+
+def stop_workers_command():
+    """Command to stop workers"""
+    try:
+        logging.basicConfig(level=logging.INFO)
+        queue_manager.stop_workers()
+        logger.info("Workers stopped")
+    
+    except Exception as e:
+        logger.error(f"Failed to stop workers: {str(e)}")
+        sys.exit(1)
+
+
+def status_command():
+    """Command to show status"""
+    try:
+        logging.basicConfig(level=logging.INFO)
+        
+        # Health check
+        health = queue_manager.health_check()
+        print(f"Overall Status: {health['status']}")
+        print(f"Healthy Workers: {health['healthy_workers']}/{health['total_workers']}")
+        
+        # Queue status
+        queue_status = queue_manager.get_queue_status()
+        print("\nQueue Status:")
+        for queue_name, status in queue_status.items():
+            print(f"  {queue_name}: {status['length']} jobs")
+        
+        # Worker status
+        worker_status = queue_manager.get_worker_status()
+        print("\nWorker Status:")
+        for worker_name, status in worker_status.items():
+            print(f"  {worker_name}: {'Running' if status['alive'] else 'Stopped'} (PID: {status['pid']})")
+    
+    except Exception as e:
+        logger.error(f"Failed to get status: {str(e)}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Queue Manager CLI")
+    parser.add_argument("command", choices=["start", "stop", "status"], help="Command to run")
+    
+    args = parser.parse_args()
+    
+    if args.command == "start":
+        start_workers_command()
+    elif args.command == "stop":
+        stop_workers_command()
+    elif args.command == "status":
+        status_command()
