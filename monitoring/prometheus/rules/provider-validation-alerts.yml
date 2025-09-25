@@ -1,0 +1,178 @@
+groups:
+  - name: provider-validation-alerts
+    rules:
+      # High Manual Review Queue
+      - alert: HighManualReviewQueue
+        expr: manual_review_queue_length > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "Manual review queue is high"
+          description: "Manual review queue has {{ $value }} providers, which is above the warning threshold of 50."
+
+      # Critical Manual Review Queue
+      - alert: CriticalManualReviewQueue
+        expr: manual_review_queue_length > 100
+        for: 2m
+        labels:
+          severity: critical
+          service: provider-validation
+        annotations:
+          summary: "Manual review queue is critically high"
+          description: "Manual review queue has {{ $value }} providers, which is above the critical threshold of 100."
+
+      # Low Validation Rate
+      - alert: LowValidationRate
+        expr: provider_validations_per_second < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "Validation rate is low"
+          description: "Validation rate is {{ $value }} validations per second, which is below the threshold of 0.1."
+
+      # No Active Workers
+      - alert: NoActiveWorkers
+        expr: validation_workers_active == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: provider-validation
+        annotations:
+          summary: "No active validation workers"
+          description: "There are no active validation workers running."
+
+      # High Job Failure Rate
+      - alert: HighJobFailureRate
+        expr: rate(failed_jobs_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: provider-validation
+        annotations:
+          summary: "High job failure rate"
+          description: "Job failure rate is {{ $value }} failures per second, which is above the threshold of 0.1."
+
+      # Low High Confidence Rate
+      - alert: LowHighConfidenceRate
+        expr: provider_high_confidence_percentage < 70
+        for: 15m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "Low high confidence rate"
+          description: "High confidence rate is {{ $value }}%, which is below the threshold of 70%."
+
+      # High Validation Latency
+      - alert: HighValidationLatency
+        expr: histogram_quantile(0.95, rate(provider_validation_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "High validation latency"
+          description: "95th percentile validation latency is {{ $value }}s, which is above the threshold of 30s."
+
+      # External API Errors
+      - alert: HighExternalAPIErrorRate
+        expr: rate(external_api_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "High external API error rate"
+          description: "External API error rate is {{ $value }} errors per second, which is above the threshold of 0.05."
+
+      # Security Events
+      - alert: SecurityEvents
+        expr: increase(security_events_total[1m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: provider-validation
+        annotations:
+          summary: "Security events detected"
+          description: "{{ $value }} security events detected in the last minute."
+
+      # Database Connection Issues
+      - alert: DatabaseConnectionIssues
+        expr: database_connections_active == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: provider-validation
+        annotations:
+          summary: "Database connection issues"
+          description: "No active database connections detected."
+
+      # Low Data Quality Score
+      - alert: LowDataQualityScore
+        expr: data_quality_score < 0.7
+        for: 10m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "Low data quality score"
+          description: "Data quality score is {{ $value }}, which is below the threshold of 0.7."
+
+      # High Compliance Violations
+      - alert: HighComplianceViolations
+        expr: increase(compliance_violations_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "High compliance violations"
+          description: "{{ $value }} compliance violations detected in the last 5 minutes."
+
+      # Application Down
+      - alert: ApplicationDown
+        expr: up{job="provider-validation-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: provider-validation
+        annotations:
+          summary: "Provider validation application is down"
+          description: "The provider validation application has been down for more than 1 minute."
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}, which is above the threshold of 90%."
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%, which is above the threshold of 80%."
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: provider-validation
+        annotations:
+          summary: "Disk space is low"
+          description: "Disk space usage is {{ $value | humanizePercentage }}, which is below the threshold of 10%."

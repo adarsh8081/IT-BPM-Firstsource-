@@ -1,0 +1,63 @@
+# Monitoring Dependencies for Provider Validation System
+
+# Prometheus client
+prometheus-client==0.15.0
+
+# HTTP client for external API calls
+httpx==0.24.1
+
+# Email support
+secure-smtplib==0.1.1
+
+# Additional monitoring utilities
+psutil==5.9.5
+py-cpuinfo==9.0.0
+
+# Async support
+asyncio-mqtt==0.13.0
+
+# JSON handling
+orjson==3.8.10
+
+# Time utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Logging enhancements
+structlog==23.1.0
+
+# Configuration management
+pydantic-settings==2.0.2
+
+# Database monitoring
+sqlalchemy-utils==0.41.1
+
+# Redis monitoring
+redis-py-cluster==2.1.3
+
+# Health checks
+aioredis==2.0.1
+
+# Metrics collection
+datadog==0.47.0
+
+# System monitoring
+distro==1.8.0
+
+# Network monitoring
+netifaces==0.11.0
+
+# Process monitoring
+setproctitle==1.3.2
+
+# Memory profiling
+memory-profiler==0.60.0
+
+# Performance monitoring
+line-profiler==4.1.1
+
+# Container monitoring
+docker==6.1.2
+
+# Kubernetes monitoring (optional)
+kubernetes==27.2.0
