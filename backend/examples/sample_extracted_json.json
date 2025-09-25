@@ -1,0 +1,220 @@
+{
+  "success": true,
+  "raw_text": "PROVIDER APPLICATION FORM\n\nPersonal Information:\nName: Dr. Sarah Johnson\nDate of Birth: 03/15/1985\nSSN: ***-**-****\n\nContact Information:\nAddress: 456 Oak Avenue, Suite 200\nCity: Los Angeles\nState: CA\nZIP Code: 90210\nPhone: (323) 555-7890\nEmail: sarah.johnson@medicalcenter.com\n\nProfessional Information:\nLicense Number: B789012\nLicense State: California\nSpecialty: Cardiology\nBoard Certification: American Board of Internal Medicine\n\nEducation:\nMedical School: UCLA School of Medicine\nGraduation Year: 2010\nResidency: Cedars-Sinai Medical Center\nFellowship: Stanford University Medical Center\n\nPractice Information:\nPractice Name: Heart Care Associates\nPractice Address: 789 Pine Street\nCity: Beverly Hills\nState: CA\nZIP: 90211\nPhone: (310) 555-2468\n\nReferences:\nDr. Michael Chen, MD\nInternal Medicine\nPhone: (213) 555-1357\n\nDr. Lisa Rodriguez, MD\nCardiology\nPhone: (818) 555-9753\n\nSignature: _________________\nDate: ___________\n\nNOTICE: This form contains sensitive information. Please handle securely.",
+  "extracted_fields": [
+    {
+      "field_name": "name",
+      "field_value": "Dr. Sarah Johnson",
+      "confidence": 0.95,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 85,
+        "width": 180,
+        "height": 25
+      }
+    },
+    {
+      "field_name": "address",
+      "field_value": "456 Oak Avenue, Suite 200",
+      "confidence": 0.90,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 145,
+        "width": 220,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "phone",
+      "field_value": "(323) 555-7890",
+      "confidence": 0.95,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 185,
+        "width": 130,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "email",
+      "field_value": "sarah.johnson@medicalcenter.com",
+      "confidence": 0.95,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 205,
+        "width": 280,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "license",
+      "field_value": "B789012",
+      "confidence": 0.90,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 245,
+        "width": 80,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "specialty",
+      "field_value": "Cardiology",
+      "confidence": 0.85,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 265,
+        "width": 100,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "practice_name",
+      "field_value": "Heart Care Associates",
+      "confidence": 0.88,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 325,
+        "width": 180,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "practice_address",
+      "field_value": "789 Pine Street",
+      "confidence": 0.85,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 345,
+        "width": 150,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "practice_phone",
+      "field_value": "(310) 555-2468",
+      "confidence": 0.95,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 365,
+        "width": 130,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "medical_school",
+      "field_value": "UCLA School of Medicine",
+      "confidence": 0.90,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 425,
+        "width": 200,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "graduation_year",
+      "field_value": "2010",
+      "confidence": 0.85,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 445,
+        "width": 40,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "residency",
+      "field_value": "Cedars-Sinai Medical Center",
+      "confidence": 0.90,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 465,
+        "width": 250,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "fellowship",
+      "field_value": "Stanford University Medical Center",
+      "confidence": 0.90,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 485,
+        "width": 280,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "reference_name",
+      "field_value": "Dr. Michael Chen, MD",
+      "confidence": 0.88,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 545,
+        "width": 160,
+        "height": 20
+      }
+    },
+    {
+      "field_name": "reference_phone",
+      "field_value": "(213) 555-1357",
+      "confidence": 0.95,
+      "page_number": 1,
+      "bounding_box": {
+        "x": 120,
+        "y": 565,
+        "width": 130,
+        "height": 20
+      }
+    }
+  ],
+  "document_type": "image",
+  "page_count": 1,
+  "processing_time": 3.2,
+  "provider": "tesseract",
+  "confidence_score": 0.91,
+  "metadata": {
+    "image_dimensions": {
+      "width": 800,
+      "height": 1000
+    },
+    "image_format": "PNG",
+    "image_quality": "high",
+    "preprocessing_applied": [
+      "grayscale_conversion",
+      "contrast_enhancement",
+      "sharpness_enhancement",
+      "noise_reduction"
+    ],
+    "tesseract_config": "--oem 3 --psm 6",
+    "extraction_timestamp": "2024-01-15T14:30:25Z",
+    "field_extraction_method": "regex_patterns",
+    "total_characters_extracted": 1247,
+    "total_words_extracted": 198,
+    "ocr_confidence_by_region": {
+      "header": 0.95,
+      "personal_info": 0.92,
+      "contact_info": 0.90,
+      "professional_info": 0.88,
+      "education": 0.90,
+      "practice_info": 0.85,
+      "references": 0.87,
+      "signature": 0.75
+    }
+  }
+}
